@@ -7,14 +7,19 @@ import androidx.appcompat.widget.AppCompatButton;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 
 import com.mycoiffeur.R;
+import com.mycoiffeur.logger.LoggerMsg;
 import com.mycoiffeur.models.Client;
+import com.mycoiffeur.models.VolleyCallBack;
 import com.mycoiffeur.securite.Securite;
+
+import org.json.JSONObject;
 
 public class RegisterScreenActivity extends AppCompatActivity {
 
@@ -47,10 +52,12 @@ public class RegisterScreenActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 email = textEmail.getText().toString();
-                password = textPassword.toString().toString();
+                password = textPassword.getText().toString();
                 confirmePassword = textConfirmePassword.getText().toString();
+                Log.d("btn inscription:","OK");
 
                     // Register setup 0: check user type (client or coiffeur)
+
                     if(checkBoxCoiffeur.isChecked()){
                         userType = "coiffeur";
                     }else {
@@ -60,11 +67,31 @@ public class RegisterScreenActivity extends AppCompatActivity {
                     // Register setup 1: password confirmation
                         securite = new Securite();
                         if( securite.passwordConfirme(password,confirmePassword) ){
+                            Log.d("Securite verification:","OK");
                             // setup 2: register
                             client = new Client("","",email,password,userType);
-                            client.signUp(client,getApplicationContext());
+                            client.signUp(client, getApplicationContext(), new VolleyCallBack() {
+                                @Override
+                                public void onSuccess(String response) {
+
+                                    if(Integer.parseInt(response) == LoggerMsg.HTTP_RESPONSE_OK){
+                                        navCtrl( getApplicationContext(),
+                                                LoginScreenActivity.class );
+                                    }else{
+                                        Log.d("msg:",LoggerMsg.REGISTER_ERREUR_MSG);
+                                    }
+
+                                }
+
+                                @Override
+                                public void onSuccess(JSONObject response) {
+
+                                }
+                            });
+
                         }else{
                             // Show error message
+                            Log.d("Securite verification:","ERREUR");
                         }
             }
         });

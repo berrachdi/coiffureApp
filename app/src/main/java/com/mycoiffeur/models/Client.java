@@ -7,11 +7,16 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 
 import com.android.volley.AuthFailureError;
+import com.android.volley.NetworkResponse;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
+import com.android.volley.toolbox.HttpHeaderParser;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.JsonRequest;
+import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.gms.common.logging.Logger;
 import com.mycoiffeur.interfaces.LoginScreenActivity;
@@ -22,6 +27,7 @@ import com.mycoiffeur.api.APIurls;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,104 +41,81 @@ public class Client extends User implements Authentification {
     }
 
     @Override
-    public Boolean signIn(String email, String passwordHash, Context context) {
+    public void signIn(String email, String passwordHash, Context context,final VolleyCallBack callBack) {
 
 
-        RequestQueue requestQueue = Volley.newRequestQueue(context);
-
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
-                (Request.Method.POST, APIurls.URL_LOGIN, null, new Response.Listener<JSONObject>() {
-
-                    @Override
-                    public void onResponse(JSONObject response) {
-
-                        if(response == null){
-
-                        }else{
-
-                            // Success login > returned the TOKEN AND USER-ID or USER-EMAIL
-                            // SAVE USER DATA IN LOCAL STORAGE
-                            SharedPreferences sharedPreferences= context.getSharedPreferences("USER_LOGIN_DATA",Context.MODE_PRIVATE);
-                            SharedPreferences.Editor editor = sharedPreferences.edit();
-
-                            try {
-
-                                editor.putString("USEREMAIL", response.get("userId").toString());
-                                editor.putString("USERTOKEN", response.get("userToken").toString());
-                                editor.putString("USERTYPE", response.get("usertype").toString());
-                                editor.apply();
-
-                            } catch (JSONException e) {
-                                Log.d("SharedPreferences>Signin(): ",e.getMessage());
-                            }
 
 
-                            LoggerMsg.status = true;
-                        }
-
-                    }
-                }, new Response.ErrorListener() {
-
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Log.d(LoggerMsg.INTERNET_ERROR,error.getMessage());
-                    }
 
 
-                }){
-                    @Nullable
-                    @Override
-                    protected Map<String, String> getParams() throws AuthFailureError {
-
-                        Map<String,String> params = new HashMap<String,String>();
-                        params.put("email",email);
-                        params.put("password",passwordHash);
-
-                        return params;
-                    }
-
-                };
-
-
-        return LoggerMsg.status;
     }
 
     @Override
-    public String signUp(Client client, Context context) {
-        RequestQueue requestQueue = Volley.newRequestQueue(context);
-
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
-                (Request.Method.POST, APIurls.URL_REGISTER, null, new Response.Listener<JSONObject>() {
-
-                    @Override
-                    public void onResponse(JSONObject response) {
-
-                    }
-                }, new Response.ErrorListener() {
-
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-
-                    }
+    public void signUp(Client client, Context context,final VolleyCallBack callBack) {
 
 
-                }){
-            @Nullable
+
+        try{
+            RequestQueue requestQueue = Volley.newRequestQueue(context);
+
+            JSONObject jsonBody = new JSONObject();
+            jsonBody.put("lastName",client.getNom());
+            jsonBody.put("email",client.getEmail());
+            jsonBody.put("passWord",client.getPasswordHash());
+            jsonBody.put("firstName",client.getPrenom());
+            jsonBody.put("userType",client.getUserType());
+            jsonBody.put("address","Nador");
+
+            final String requestBody = jsonBody.toString();
+            StringRequest stringRequest = new StringRequest(Request.Method.POST, APIurls.URL_REGISTER, new Response.Listener<String>() {
             @Override
-            protected Map<String, String> getParams() throws AuthFailureError {
+            public void onResponse(String response) {
+                callBack.onSuccess(response);
 
-                Map<String,String> params = new HashMap<String,String>();
-                params.put("email",client.getEmail());
-                params.put("password",client.getPasswordHash());
-                params.put("nom",client.getNom());
-                params.put("prenom",client.getPrenom());
-                params.put("userType",client.getUserType());
-                return params;
+
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e("VOLLEY", error.toString());
+            }
+        }) {
+            @Override
+            public String getBodyContentType() {
+                return "application/json; charset=utf-8";
             }
 
+            @Override
+            public byte[] getBody() throws AuthFailureError {
+                try {
+                    return requestBody == null ? null : requestBody.getBytes("utf-8");
+                } catch (UnsupportedEncodingException uee) {
+                    VolleyLog.wtf("Unsupported Encoding while trying to get the bytes of %s using %s", requestBody, "utf-8");
+                    return null;
+                }
+            }
+
+            @Override
+            protected Response<String> parseNetworkResponse(NetworkResponse response) {
+                String responseString = "";
+                if (response != null) {
+                    responseString = String.valueOf(response.statusCode);
+                    // can get more details such as response.headers
+                }
+                return Response.success(responseString, HttpHeaderParser.parseCacheHeaders(response));
+            }
         };
-        return null;
+
+            requestQueue.add(stringRequest);
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+
     }
+
+
 
     @Override
     public String signOut() {

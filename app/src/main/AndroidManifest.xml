@@ -21,13 +21,15 @@
             android:name=".interfaces.ProfileActivity"
             android:theme="@style/fullScreen" />
         <activity android:name=".interfaces.HomeScreenActivity">
+
+        </activity>
+        <activity android:name=".interfaces.RegisterScreenActivity" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".interfaces.RegisterScreenActivity" />
         <activity android:name=".interfaces.LoginScreenActivity" />
         <activity android:name=".MainActivity" />
     </application>

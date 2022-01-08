@@ -53,7 +53,7 @@
         android:layout_marginLeft="32dp"
         android:layout_marginRight="32dp"
         android:layout_height="50dp"
-        android:text="Inscription"
+        android:text="Connexion"
         android:textAllCaps="false"
         android:background="@drawable/get_started_newcount_edit_text"
         android:textColor="@color/black"
